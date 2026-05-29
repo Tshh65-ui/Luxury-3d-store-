@@ -3,227 +3,290 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Luxury 3D Store</title>
+  <title>LUXE VIP 3D Store</title>
   <style>
     body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
     canvas { display: block; }
-    .overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
-      display: flex; align-items: center; justify-content: center; z-index: 200;
-    }
-    .passcode {
-      background: rgba(0,0,0,0.85); color: #fff; padding: 30px; border-radius: 12px;
-      text-align: center; pointer-events: all; box-shadow: 0 0 30px rgba(255,0,0,0.3);
-    }
-    input { font-size: 24px; padding: 10px; width: 200px; text-align: center; margin: 15px 0; }
-    button { padding: 12px 24px; font-size: 16px; background: #c00; color: white; border: none; border-radius: 6px; cursor: pointer; }
-    .cart { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: gold; padding: 10px 20px; border-radius: 8px; }
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; display: none; align-items: center; justify-content: center; z-index: 300; }
+    .passcode, .keypadOverlay, .success { background: rgba(0,0,0,0.93); color: #fff; padding: 35px; border-radius: 16px; text-align: center; pointer-events: all; box-shadow: 0 0 50px rgba(255,215,0,0.6); }
+    input { font-size: 28px; padding: 12px; width: 200px; text-align: center; margin: 15px 0; letter-spacing: 8px; }
+    button { padding: 14px 32px; font-size: 17px; background: #c00; color: white; border: none; border-radius: 8px; cursor: pointer; margin: 10px; }
+    .cart { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.85); color: gold; padding: 14px 26px; border-radius: 12px; font-size: 17px; }
+    .info-box { position: absolute; top: 20px; left: 20px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 10px; max-width: 300px; display: none; }
+    .keypad-status { color: #ff4444; font-weight: bold; margin-top: 10px; }
   </style>
 </head>
 <body>
+  <!-- Passcode (initial) -->
   <div id="passcodeOverlay" class="overlay" style="display: none;">
     <div class="passcode">
-      <h2>Enter Access Code</h2>
-      <input type="text" id="codeInput" maxlength="6" placeholder="123456">
-      <br><button onclick="checkCode()">ENTER</button>
+      <h2>VIP ACCESS</h2>
+      <input type="text" id="codeInput" maxlength="6" placeholder="Enter Code">
+      <br><button onclick="checkCode()">ENTER THE LUXE STORE</button>
     </div>
   </div>
 
-  <div id="cart" class="cart" style="display: none;">Wishlist: <span id="cartCount">0</span></div>
+  <!-- Keypad Input -->
+  <div id="keypadOverlay" class="overlay">
+    <div class="keypadOverlay">
+      <h2>🔐 VIP KEYPAD</h2>
+      <input type="text" id="keypadInput" maxlength="4" placeholder="2000">
+      <br><button onclick="submitKeypad()">UNLOCK</button>
+      <div id="keypadStatus" class="keypad-status"></div>
+    </div>
+  </div>
+
+  <!-- Product Info -->
+  <div id="infoBox" class="info-box"></div>
+
+  <!-- Cart -->
+  <div id="cart" class="cart" style="display: none;">
+    Wishlist: <span id="cartCount">0</span>
+    <button onclick="showPayment()" style="margin-left:15px; background:#ffd700; color:#000; padding:8px 18px;">Checkout VIP</button>
+  </div>
+
+  <!-- Payment & Success same as before -->
+  <div id="paymentOverlay" class="overlay">
+    <div class="payment" style="background: rgba(0,0,0,0.93);">
+      <h2>Exclusive VIP Checkout</h2>
+      <div id="cardAnimation" style="width: 340px; height: 210px; background: linear-gradient(135deg, #1a1a1a, #000); border: 5px solid gold; border-radius: 15px; margin: 20px auto; color: gold; display: flex; align-items: center; justify-content: center; font-size: 21px; box-shadow: 0 15px 50px rgba(255,215,0,0.7);">
+        <div style="text-align:center;">
+          <strong>LUXE BLACK CARD</strong><br>
+          Thabang •••• 4242
+        </div>
+      </div>
+      <button onclick="completePayment()">Confirm Luxury Purchase</button>
+    </div>
+  </div>
+
+  <div id="successOverlay" class="overlay">
+    <div class="success">
+      <h2>🎉 Welcome to the Family</h2>
+      <p style="color:gold;">You are now a LUXE VIP member.</p>
+      <button onclick="location.reload()">Shop Again</button>
+    </div>
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
-    let scene, camera, renderer, controls, product;
-    let phase = 'intro'; // intro → door → inside
+    let scene, camera, renderer, controls;
+    let products = [];
     let cartItems = 0;
+    let phase = 'intro';
+    let keypadMesh;
 
     function init() {
       scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x111111, 10, 100);
+      scene.fog = new THREE.Fog(0x020202, 25, 110);
 
-      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+      camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 200);
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.shadowMap.enabled = true;
       document.body.appendChild(renderer.domElement);
 
-      // Lights - cinematic
-      const ambient = new THREE.AmbientLight(0xaaaaaa, 0.6);
-      scene.add(ambient);
-      const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
-      sun.position.set(10, 20, 10);
-      sun.castShadow = true;
-      scene.add(sun);
+      // Dramatic celebrity lighting
+      scene.add(new THREE.AmbientLight(0xcccccc, 0.9));
+      const spot1 = new THREE.SpotLight(0xffdd88, 2, 0, Math.PI/6);
+      spot1.position.set(0, 18, 5);
+      scene.add(spot1);
+      const spot2 = new THREE.SpotLight(0x88ffdd, 1.5, 0, Math.PI/5);
+      spot2.position.set(12, 15, 20);
+      scene.add(spot2);
 
-      // Ground
-      const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 100),
-        new THREE.MeshStandardMaterial({ color: 0x222222 })
-      );
-      ground.rotation.x = -Math.PI / 2;
-      ground.receiveShadow = true;
+      // Large ground + extended Red Carpet
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(150,150), new THREE.MeshStandardMaterial({color:0x0a0a0a}));
+      ground.rotation.x = -Math.PI/2;
       scene.add(ground);
 
-      // Red Carpet
-      const carpet = new THREE.Mesh(
-        new THREE.PlaneGeometry(6, 30),
-        new THREE.MeshStandardMaterial({ color: 0x990000 })
-      );
-      carpet.rotation.x = -Math.PI / 2;
-      carpet.position.set(0, 0.01, 0);
+      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(8,50), new THREE.MeshStandardMaterial({color:0x990000, emissive: 0x330000}));
+      carpet.rotation.x = -Math.PI/2;
+      carpet.position.z = 8;
       scene.add(carpet);
 
-      // Two Black Mercedes G63 (simple realistic-looking boxes for now)
+      // Improved Mercedes G63 cars
       function createCar(x) {
-        const carBody = new THREE.Mesh(
-          new THREE.BoxGeometry(5, 2.2, 2.2),
-          new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.3 })
-        );
-        carBody.position.set(x, 1.1, -12);
-        carBody.castShadow = true;
-        scene.add(carBody);
-
-        // Wheels
-        const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 32);
-        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
-        for (let i = 0; i < 4; i++) {
-          const wheel = new THREE.Mesh(wheelGeo, wheelMat);
-          wheel.rotation.z = Math.PI / 2;
-          wheel.position.set(x + (i%2 ? 1.8 : -1.8), 0.6, -12 + (i>1 ? 1.2 : -1.2));
-          scene.add(wheel);
-        }
+        const group = new THREE.Group();
+        // Body
+        const body = new THREE.Mesh(new THREE.BoxGeometry(5.8, 2.6, 2.8), new THREE.MeshStandardMaterial({color:0x111111, metalness:0.98, roughness:0.12}));
+        body.position.y = 1.6;
+        group.add(body);
+        // Windows
+        const windowMat = new THREE.MeshStandardMaterial({color:0x112233, metalness:0.9});
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(3.8, 1.2, 2.2), windowMat);
+        roof.position.set(0, 2.6, 0);
+        group.add(roof);
+        // Lights
+        const lightMat = new THREE.MeshStandardMaterial({color:0xffee99, emissive:0xffaa00});
+        const headlight = new THREE.Mesh(new THREE.BoxGeometry(0.6,0.4,0.2), lightMat);
+        headlight.position.set(2.6, 1.6, -1.2);
+        group.add(headlight);
+        group.position.set(x, 0, -22);
+        scene.add(group);
       }
-      createCar(-8);
-      createCar(8);
+      createCar(-12);
+      createCar(12);
 
-      // Stairs
-      const stairs = new THREE.Mesh(
-        new THREE.BoxGeometry(8, 0.3, 20),
-        new THREE.MeshStandardMaterial({ color: 0x555555 })
-      );
-      stairs.position.set(0, 3, 5);
-      stairs.rotation.x = -0.2;
+      // Bigger Stairs
+      const stairs = new THREE.Mesh(new THREE.BoxGeometry(12,0.6,28), new THREE.MeshStandardMaterial({color:0x444444}));
+      stairs.position.set(0,5,10);
+      stairs.rotation.x = -0.18;
       scene.add(stairs);
 
-      // Building walls (simple)
-      const wallMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
-      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(1, 12, 20), wallMat);
-      leftWall.position.set(-6, 6, 10);
+      // Large Building / Store
+      const wallMat = new THREE.MeshStandardMaterial({color:0x222222, metalness:0.6});
+      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(2,18,45), wallMat);
+      leftWall.position.set(-9,9,22);
       scene.add(leftWall);
       const rightWall = leftWall.clone();
-      rightWall.position.x = 6;
+      rightWall.position.x = 9;
       scene.add(rightWall);
 
-      // Door (initially closed)
-      const door = new THREE.Mesh(
-        new THREE.BoxGeometry(4, 8, 0.3),
-        new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.95 })
-      );
-      door.position.set(0, 4, 0);
+      // Door area
+      const door = new THREE.Mesh(new THREE.BoxGeometry(6,10,0.6), new THREE.MeshStandardMaterial({color:0x111111, metalness:0.95}));
+      door.position.set(0,6,4);
       scene.add(door);
       window.doorMesh = door;
 
-      // Simple product inside (will appear after entering)
-      const prodGeo = new THREE.BoxGeometry(2, 2, 2);
-      const prodMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, metalness: 0.8, roughness: 0.2 });
-      product = new THREE.Mesh(prodGeo, prodMat);
-      product.position.set(0, 2, 15);
-      product.visible = false;
-      scene.add(product);
+      // Interactive Keypad (box on the right wall)
+      keypadMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 1.8, 0.2),
+        new THREE.MeshStandardMaterial({color:0x333333, emissive:0x222222})
+      );
+      keypadMesh.position.set(7.5, 6, 4);
+      keypadMesh.userData = {isKeypad: true};
+      scene.add(keypadMesh);
 
-      // Controls (mouse / touch)
+      // More spacious products
+      function createProduct(x, z, color, name, price) {
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(2.2, 2.2, 2.2),
+          new THREE.MeshStandardMaterial({color: color, metalness: 0.92, roughness: 0.08})
+        );
+        mesh.position.set(x, 3.5, z);
+        mesh.userData = {name: name, price: price};
+        scene.add(mesh);
+        products.push(mesh);
+      }
+
+      createProduct(-6, 28, 0x00ccff, "Luxe Chronograph", "R45,000");
+      createProduct(0, 27, 0xff1133, "Signature Boost Sneakers", "R28,500");
+      createProduct(7, 29, 0x11ff88, "Cashmere Overcoat", "R68,000");
+      createProduct(-4, 36, 0xffdd00, "Limited Alligator Bag", "R95,000");
+      createProduct(5, 35, 0x9966ff, "Bespoke Sunglasses", "R19,900");
+
+      camera.position.set(0, 12, -38);
+
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.1;
-      controls.minDistance = 3;
-      controls.maxDistance = 60;
+      controls.minDistance = 5;
+      controls.maxDistance = 80;
 
-      camera.position.set(0, 8, -25);
-
-      // Start cinematic intro
       startCinematic();
-
       animate();
     }
 
     function startCinematic() {
-      let progress = 0;
-      const duration = 8000; // 8 seconds
-      const startTime = Date.now();
-
-      function cinematicStep() {
-        const elapsed = Date.now() - startTime;
-        progress = Math.min(elapsed / duration, 1);
-
-        // Move camera up the red carpet toward the door
-        camera.position.x = Math.sin(progress * Math.PI) * 2;
-        camera.position.z = -25 + progress * 32;
-        camera.position.y = 6 + progress * 4;
-        camera.lookAt(0, 4, 5);
-
-        if (progress < 1) {
-          requestAnimationFrame(cinematicStep);
-        } else {
-          // Show passcode
-          document.getElementById('passcodeOverlay').style.display = 'flex';
-        }
+      let t = 0;
+      const start = Date.now();
+      function move() {
+        t = (Date.now() - start) / 8000;
+        camera.position.z = -38 + t * 48;
+        camera.position.y = 12 + Math.sin(t*2)*4;
+        camera.lookAt(0, 7, 12);
+        if (t < 1) requestAnimationFrame(move);
+        else document.getElementById('passcodeOverlay').style.display = 'flex';
       }
-      cinematicStep();
+      move();
     }
 
     window.checkCode = function() {
-      const input = document.getElementById('codeInput').value;
-      if (input.length >= 4) { // Any 4+ digits works for demo
+      if (document.getElementById('codeInput').value.length >= 3) {
         document.getElementById('passcodeOverlay').style.display = 'none';
-        
-        // Open doors
-        if (window.doorMesh) {
-          window.doorMesh.position.x = -3; // Split left
-          setTimeout(() => { window.doorMesh.position.x = 3; }, 800); // Split right (fake double door)
-        }
-
-        // Enter store
-        setTimeout(() => {
-          phase = 'inside';
-          product.visible = true;
-          controls.target.set(0, 2, 15);
-          camera.position.set(5, 5, 25);
-          document.getElementById('cart').style.display = 'block';
-        }, 1200);
+        document.getElementById('keypadOverlay').style.display = 'none';
       }
     };
 
-    // Click on product to add to cart
-    function onClick(event) {
-      if (phase !== 'inside') return;
-      // Simple raycast to detect click on product
+    // Click handler for keypad & products
+    window.addEventListener('click', (e) => {
+      if (phase !== 'inside' && phase !== 'intro') return;
+
+      const mouse = new THREE.Vector2(
+        (e.clientX / window.innerWidth) * 2 - 1,
+        -(e.clientY / window.innerHeight) * 2 + 1
+      );
       const raycaster = new THREE.Raycaster();
-      const mouse = new THREE.Vector2();
-      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObject(product);
-      if (intersects.length > 0) {
-        cartItems++;
-        document.getElementById('cartCount').textContent = cartItems;
-        alert("Added to your exclusive wishlist ✨");
+      const hits = raycaster.intersectObjects(products.concat(keypadMesh ? [keypadMesh] : []));
+
+      if (hits.length > 0) {
+        const obj = hits[0].object;
+        if (obj.userData.isKeypad) {
+          document.getElementById('keypadOverlay').style.display = 'flex';
+          document.getElementById('keypadInput').focus();
+        } else {
+          // Product click
+          const item = obj.userData;
+          cartItems++;
+          document.getElementById('cartCount').textContent = cartItems;
+          const box = document.getElementById('infoBox');
+          box.innerHTML = `<strong>\( {item.name}</strong><br>Price: R \){item.price}`;
+          box.style.display = 'block';
+          setTimeout(() => box.style.display = 'none', 2500);
+        }
       }
-    }
+    });
+
+    window.submitKeypad = function() {
+      const input = document.getElementById('keypadInput').value;
+      const status = document.getElementById('keypadStatus');
+      
+      if (input === "2000") {
+        status.style.color = "#00ff88";
+        status.textContent = "ACCESS GRANTED";
+        setTimeout(() => {
+          document.getElementById('keypadOverlay').style.display = 'none';
+          // Open doors
+          window.doorMesh.position.x = -4;
+          setTimeout(() => { window.doorMesh.position.x = 4; }, 800);
+          
+          phase = 'inside';
+          document.getElementById('cart').style.display = 'block';
+          controls.target.set(0, 5, 32);
+          camera.position.set(12, 12, 45);
+        }, 800);
+      } else {
+        status.textContent = "INVALID CODE";
+        setTimeout(() => { status.textContent = ""; }, 1500);
+      }
+    };
+
+    window.showPayment = function() { /* same as before */ 
+      if (cartItems === 0) return alert("Add items first");
+      document.getElementById('paymentOverlay').style.display = 'flex';
+    };
+
+    window.completePayment = function() {
+      const card = document.getElementById('cardAnimation');
+      card.style.transition = 'transform 1.6s';
+      card.style.transform = 'scale(1.25) rotate(10deg)';
+      setTimeout(() => {
+        document.getElementById('paymentOverlay').style.display = 'none';
+        document.getElementById('successOverlay').style.display = 'flex';
+      }, 1600);
+    };
 
     function animate() {
       requestAnimationFrame(animate);
       if (controls) controls.update();
-      if (product) product.rotation.y += 0.005;
+      products.forEach(p => p.rotation.y += 0.006);
       renderer.render(scene, camera);
     }
 
-    // Click handler
-    window.addEventListener('click', onClick);
-
-    // Resize
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
