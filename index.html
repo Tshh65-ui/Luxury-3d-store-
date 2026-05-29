@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Luxury 3D Store</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
+    canvas { display: block; }
+    .overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;
+      display: flex; align-items: center; justify-content: center; z-index: 200;
+    }
+    .passcode {
+      background: rgba(0,0,0,0.85); color: #fff; padding: 30px; border-radius: 12px;
+      text-align: center; pointer-events: all; box-shadow: 0 0 30px rgba(255,0,0,0.3);
+    }
+    input { font-size: 24px; padding: 10px; width: 200px; text-align: center; margin: 15px 0; }
+    button { padding: 12px 24px; font-size: 16px; background: #c00; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .cart { position: absolute; bottom: 20px; right: 20px; background: rgba(0,0,0,0.7); color: gold; padding: 10px 20px; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <div id="passcodeOverlay" class="overlay" style="display: none;">
+    <div class="passcode">
+      <h2>Enter Access Code</h2>
+      <input type="text" id="codeInput" maxlength="6" placeholder="123456">
+      <br><button onclick="checkCode()">ENTER</button>
+    </div>
+  </div>
+
+  <div id="cart" class="cart" style="display: none;">Wishlist: <span id="cartCount">0</span></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls, product;
+    let phase = 'intro'; // intro → door → inside
+    let cartItems = 0;
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0x111111, 10, 100);
+
+      camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 200);
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // Lights - cinematic
+      const ambient = new THREE.AmbientLight(0xaaaaaa, 0.6);
+      scene.add(ambient);
+      const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
+      sun.position.set(10, 20, 10);
+      sun.castShadow = true;
+      scene.add(sun);
+
+      // Ground
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(100, 100),
+        new THREE.MeshStandardMaterial({ color: 0x222222 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // Red Carpet
+      const carpet = new THREE.Mesh(
+        new THREE.PlaneGeometry(6, 30),
+        new THREE.MeshStandardMaterial({ color: 0x990000 })
+      );
+      carpet.rotation.x = -Math.PI / 2;
+      carpet.position.set(0, 0.01, 0);
+      scene.add(carpet);
+
+      // Two Black Mercedes G63 (simple realistic-looking boxes for now)
+      function createCar(x) {
+        const carBody = new THREE.Mesh(
+          new THREE.BoxGeometry(5, 2.2, 2.2),
+          new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.9, roughness: 0.3 })
+        );
+        carBody.position.set(x, 1.1, -12);
+        carBody.castShadow = true;
+        scene.add(carBody);
+
+        // Wheels
+        const wheelGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.4, 32);
+        const wheelMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
+        for (let i = 0; i < 4; i++) {
+          const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(x + (i%2 ? 1.8 : -1.8), 0.6, -12 + (i>1 ? 1.2 : -1.2));
+          scene.add(wheel);
+        }
+      }
+      createCar(-8);
+      createCar(8);
+
+      // Stairs
+      const stairs = new THREE.Mesh(
+        new THREE.BoxGeometry(8, 0.3, 20),
+        new THREE.MeshStandardMaterial({ color: 0x555555 })
+      );
+      stairs.position.set(0, 3, 5);
+      stairs.rotation.x = -0.2;
+      scene.add(stairs);
+
+      // Building walls (simple)
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(1, 12, 20), wallMat);
+      leftWall.position.set(-6, 6, 10);
+      scene.add(leftWall);
+      const rightWall = leftWall.clone();
+      rightWall.position.x = 6;
+      scene.add(rightWall);
+
+      // Door (initially closed)
+      const door = new THREE.Mesh(
+        new THREE.BoxGeometry(4, 8, 0.3),
+        new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.95 })
+      );
+      door.position.set(0, 4, 0);
+      scene.add(door);
+      window.doorMesh = door;
+
+      // Simple product inside (will appear after entering)
+      const prodGeo = new THREE.BoxGeometry(2, 2, 2);
+      const prodMat = new THREE.MeshStandardMaterial({ color: 0x00aaff, metalness: 0.8, roughness: 0.2 });
+      product = new THREE.Mesh(prodGeo, prodMat);
+      product.position.set(0, 2, 15);
+      product.visible = false;
+      scene.add(product);
+
+      // Controls (mouse / touch)
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.1;
+      controls.minDistance = 3;
+      controls.maxDistance = 60;
+
+      camera.position.set(0, 8, -25);
+
+      // Start cinematic intro
+      startCinematic();
+
+      animate();
+    }
+
+    function startCinematic() {
+      let progress = 0;
+      const duration = 8000; // 8 seconds
+      const startTime = Date.now();
+
+      function cinematicStep() {
+        const elapsed = Date.now() - startTime;
+        progress = Math.min(elapsed / duration, 1);
+
+        // Move camera up the red carpet toward the door
+        camera.position.x = Math.sin(progress * Math.PI) * 2;
+        camera.position.z = -25 + progress * 32;
+        camera.position.y = 6 + progress * 4;
+        camera.lookAt(0, 4, 5);
+
+        if (progress < 1) {
+          requestAnimationFrame(cinematicStep);
+        } else {
+          // Show passcode
+          document.getElementById('passcodeOverlay').style.display = 'flex';
+        }
+      }
+      cinematicStep();
+    }
+
+    window.checkCode = function() {
+      const input = document.getElementById('codeInput').value;
+      if (input.length >= 4) { // Any 4+ digits works for demo
+        document.getElementById('passcodeOverlay').style.display = 'none';
+        
+        // Open doors
+        if (window.doorMesh) {
+          window.doorMesh.position.x = -3; // Split left
+          setTimeout(() => { window.doorMesh.position.x = 3; }, 800); // Split right (fake double door)
+        }
+
+        // Enter store
+        setTimeout(() => {
+          phase = 'inside';
+          product.visible = true;
+          controls.target.set(0, 2, 15);
+          camera.position.set(5, 5, 25);
+          document.getElementById('cart').style.display = 'block';
+        }, 1200);
+      }
+    };
+
+    // Click on product to add to cart
+    function onClick(event) {
+      if (phase !== 'inside') return;
+      // Simple raycast to detect click on product
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObject(product);
+      if (intersects.length > 0) {
+        cartItems++;
+        document.getElementById('cartCount').textContent = cartItems;
+        alert("Added to your exclusive wishlist ✨");
+      }
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (controls) controls.update();
+      if (product) product.rotation.y += 0.005;
+      renderer.render(scene, camera);
+    }
+
+    // Click handler
+    window.addEventListener('click', onClick);
+
+    // Resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    init();
+  </script>
+</body>
+</html>
