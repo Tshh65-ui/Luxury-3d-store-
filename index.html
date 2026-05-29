@@ -7,21 +7,21 @@
   <style>
     body { margin: 0; overflow: hidden; background: #000; }
     #loading { position: absolute; top: 50%; left: 50%; color: gold; font-size: 24px; transform: translate(-50%, -50%); z-index: 1000; }
-    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 300; }
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); display: none; align-items: center; justify-content: center; z-index: 300; }
   </style>
 </head>
 <body>
   <div id="loading">Loading VIP Experience...</div>
 
-  <!-- Keypad Overlay -->
+  <!-- Keypad -->
   <div id="keypadOverlay" class="overlay" style="display: flex;">
-    <div style="background:#111; color:white; padding:40px; border-radius:20px; text-align:center; box-shadow:0 0 40px gold;">
+    <div style="background:#111; color:white; padding:40px; border-radius:20px; text-align:center; box-shadow:0 0 50px gold;">
       <h2>🔐 VIP ENTRANCE</h2>
-      <p>Enter Code</p>
-      <input id="keyInput" type="text" maxlength="4" placeholder="2000" style="font-size:32px; width:180px; text-align:center; padding:10px;">
+      <p>Enter Access Code</p>
+      <input id="keyInput" type="text" maxlength="4" placeholder="2000" style="font-size:32px; width:200px; text-align:center; padding:12px;">
       <br><br>
-      <button onclick="submitCode()" style="padding:15px 40px; font-size:18px; background:#c00; color:white; border:none; border-radius:10px;">UNLOCK</button>
-      <div id="status" style="color:#ff4444; margin-top:15px; font-weight:bold; min-height:24px;"></div>
+      <button onclick="submitCode()" style="padding:16px 45px; font-size:18px; background:#c00; color:white; border:none; border-radius:10px;">UNLOCK DOOR</button>
+      <div id="status" style="color:#ff4444; margin-top:20px; font-weight:bold; min-height:28px;"></div>
     </div>
   </div>
 
@@ -38,65 +38,86 @@
       document.getElementById('loading').style.display = 'none';
 
       scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x222222, 20, 150);
+      scene.fog = new THREE.Fog(0x222222, 25, 160);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+      camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 200);
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       document.body.appendChild(renderer.domElement);
 
-      // Very bright lighting
-      scene.add(new THREE.AmbientLight(0xffffff, 1.4));
-      const sun = new THREE.DirectionalLight(0xffffff, 2);
-      sun.position.set(20, 40, 30);
+      // Bright lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 1.3));
+      const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+      sun.position.set(25, 45, 35);
       scene.add(sun);
 
-      // Ground
-      const ground = new THREE.Mesh(new THREE.PlaneGeometry(200,200), new THREE.MeshStandardMaterial({color: 0x333333}));
+      // Ground + Red Carpet
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(250,250), new THREE.MeshStandardMaterial({color: 0x2a2a2a}));
       ground.rotation.x = -Math.PI / 2;
       scene.add(ground);
 
-      // Red Carpet
-      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(10, 70), new THREE.MeshStandardMaterial({color: 0xcc0000}));
+      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(10, 75), new THREE.MeshStandardMaterial({color: 0xcc0000}));
       carpet.rotation.x = -Math.PI / 2;
-      carpet.position.z = 20;
+      carpet.position.z = 22;
       scene.add(carpet);
 
-      // Two Black Mercedes G63 (Simple but visible)
-      function createCar(x) {
-        const car = new THREE.Mesh(new THREE.BoxGeometry(6.5, 3, 3.2), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.95, roughness: 0.2}));
-        car.position.set(x, 1.8, -28);
-        scene.add(car);
-      }
-      createCar(-14);
-      createCar(14);
+      // Improved G-Wagon (more realistic shape)
+      function createG63(x) {
+        const group = new THREE.Group();
+        
+        // Main Body
+        const body = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.9, 3.4), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.97, roughness: 0.2}));
+        body.position.y = 1.9;
+        group.add(body);
+        
+        // Roof / Windows
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.6, 2.8), new THREE.MeshStandardMaterial({color: 0x112233, metalness: 0.9}));
+        roof.position.set(0, 3.1, 0);
+        group.add(roof);
+        
+        // Wheels
+        const wheelGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.5, 24);
+        const wheelMat = new THREE.MeshStandardMaterial({color: 0x222222});
+        const positions = [[2.4,1,-1.4], [-2.4,1,-1.4], [2.4,1,1.4], [-2.4,1,1.4]];
+        positions.forEach(pos => {
+          const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(pos[0] + x, pos[1], pos[2] - 25);
+          scene.add(wheel);
+        });
 
-      // Big Stairs
-      const stairs = new THREE.Mesh(new THREE.BoxGeometry(14, 1.2, 35), new THREE.MeshStandardMaterial({color: 0x555555}));
-      stairs.position.set(0, 7, 15);
+        group.position.x = x;
+        scene.add(group);
+      }
+      createG63(-15);
+      createG63(15);
+
+      // Stairs
+      const stairs = new THREE.Mesh(new THREE.BoxGeometry(14, 1.4, 38), new THREE.MeshStandardMaterial({color: 0x555555}));
+      stairs.position.set(0, 8, 18);
       stairs.rotation.x = -0.18;
       scene.add(stairs);
 
       // Door
-      doorMesh = new THREE.Mesh(new THREE.BoxGeometry(7, 12, 0.8), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.9}));
-      doorMesh.position.set(0, 8, 6);
+      doorMesh = new THREE.Mesh(new THREE.BoxGeometry(7.5, 13, 0.8), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.92}));
+      doorMesh.position.set(0, 9, 7);
       scene.add(doorMesh);
 
-      // Products inside (Bright colors)
+      // Products
       function addProduct(x, z, color, name) {
-        const p = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: color, metalness: 0.85}));
-        p.position.set(x, 5, z);
+        const p = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: color, metalness: 0.9}));
+        p.position.set(x, 6, z);
         p.userData = {name};
         scene.add(p);
         products.push(p);
       }
-      addProduct(-8, 35, 0x00aaff, "Luxe Watch");
-      addProduct(0, 34, 0xff2222, "Signature Sneakers");
-      addProduct(8, 36, 0x22ff88, "Cashmere Coat");
-      addProduct(0, 48, 0xffdd00, "VIP Bag");
+      addProduct(-9, 38, 0x00aaff, "Luxe Watch");
+      addProduct(0, 37, 0xff2222, "Signature Sneakers");
+      addProduct(9, 39, 0x22ff88, "Cashmere Coat");
+      addProduct(0, 50, 0xffdd00, "VIP Bag");
 
-      camera.position.set(0, 18, -55);
+      camera.position.set(0, 20, -60);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
@@ -109,10 +130,10 @@
       let progress = 0;
       const startTime = Date.now();
       function move() {
-        progress = Math.min((Date.now() - startTime) / 9000, 1);
-        camera.position.z = -55 + progress * 68;
-        camera.position.y = 18 + Math.sin(progress * 2) * 6;
-        camera.lookAt(0, 9, 20);
+        progress = Math.min((Date.now() - startTime) / 9500, 1);
+        camera.position.z = -60 + progress * 75;
+        camera.position.y = 20 + Math.sin(progress * 2.5) * 7;
+        camera.lookAt(0, 10, 22);
         if (progress < 1) requestAnimationFrame(move);
       }
       move();
@@ -124,24 +145,23 @@
 
       if (code === "2000") {
         status.style.color = "#00ff88";
-        status.textContent = "ACCESS GRANTED ✓";
+        status.textContent = "ACCESS GRANTED";
         setTimeout(() => {
           document.getElementById('keypadOverlay').style.display = 'none';
-          // Open doors
           doorMesh.position.x = -6;
-          setTimeout(() => doorMesh.position.x = 6, 1200);
+          setTimeout(() => doorMesh.position.x = 6, 1300);
           phase = 'inside';
-        }, 800);
+        }, 900);
       } else {
-        status.textContent = "INVALID CODE - Try 2000";
-        setTimeout(() => status.textContent = "", 2000);
+        status.textContent = "CHECK ON INSTAGRAM";
+        setTimeout(() => status.textContent = "", 2200);
       }
     };
 
     function animate() {
       requestAnimationFrame(animate);
       if (controls) controls.update();
-      products.forEach(p => p.rotation.y += 0.008);
+      products.forEach(p => p.rotation.y += 0.009);
       renderer.render(scene, camera);
     }
 
@@ -151,7 +171,6 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Click on products
     window.addEventListener('click', (e) => {
       if (phase !== 'inside') return;
       const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
