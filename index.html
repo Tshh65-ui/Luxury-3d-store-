@@ -7,12 +7,10 @@
   <style>
     body { margin: 0; overflow: hidden; background: #000; }
     #loading { position: absolute; top: 50%; left: 50%; color: gold; font-size: 24px; transform: translate(-50%, -50%); z-index: 1000; }
-    #levelDisplay { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.85); color: gold; padding: 12px 20px; border-radius: 12px; font-size: 17px; border: 2px solid gold; z-index: 200; }
   </style>
 </head>
 <body>
   <div id="loading">Loading Luxury Store...</div>
-  <div id="levelDisplay">VIP LEVEL <span id="level">1</span></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
@@ -20,17 +18,9 @@
 
   <script>
     let scene, camera, renderer, controls, doorMesh, keypadMesh;
-    let vipLevel = 1;
-    let productsAdded = 0;
-    let phase = 'intro';
-
-    function updateLevel() {
-      document.getElementById('level').textContent = vipLevel;
-    }
 
     function init() {
       document.getElementById('loading').style.display = 'none';
-      updateLevel();
 
       scene = new THREE.Scene();
       scene.fog = new THREE.Fog(0x111111, 30, 180);
@@ -61,36 +51,37 @@
       const loader = new THREE.GLTFLoader();
       
       loader.load('g63.glb', (gltf) => {
-        // Left Car - facing right
+        // Left Car facing RIGHT (towards center)
         const car1 = gltf.scene.clone();
         car1.position.set(-16, 0, -32);
         car1.scale.set(2.2, 2.2, 2.2);
-        car1.rotation.y = Math.PI / 2;        // Facing right
+        car1.rotation.y = Math.PI / 2;     // Facing right
         scene.add(car1);
 
-        // Right Car - facing left
+        // Right Car facing LEFT (towards center)
         const car2 = gltf.scene.clone();
         car2.position.set(16, 0, -32);
         car2.scale.set(2.2, 2.2, 2.2);
-        car2.rotation.y = -Math.PI / 2;       // Facing left
+        car2.rotation.y = -Math.PI / 2;    // Facing left
         scene.add(car2);
       });
 
-      // Load 3D Keypad Model
+      // Load Keypad Model
       loader.load('keypad.glb', (gltf) => {
         keypadMesh = gltf.scene.clone();
-        keypadMesh.position.set(9, 7, 12);     // Next to the door
-        keypadMesh.scale.set(1.5, 1.5, 1.5);
-        keypadMesh.rotation.y = Math.PI / 2;
+        keypadMesh.position.set(9.5, 7, 12);
+        keypadMesh.scale.set(1.8, 1.8, 1.8);
+        keypadMesh.rotation.y = Math.PI;
         scene.add(keypadMesh);
       });
 
-      // Stairs + Walls + Door (same as before)
+      // Stairs
       const stairs = new THREE.Mesh(new THREE.BoxGeometry(16, 1.5, 45), new THREE.MeshStandardMaterial({color: 0x444444}));
       stairs.position.set(0, 8, 20);
       stairs.rotation.x = -0.22;
       scene.add(stairs);
 
+      // Door
       doorMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 14, 1), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.95}));
       doorMesh.position.set(0, 10, 12);
       scene.add(doorMesh);
@@ -131,33 +122,6 @@
       if (controls) controls.update();
       renderer.render(scene, camera);
     }
-
-    // Click on 3D keypad or products
-    window.addEventListener('click', (e) => {
-      if (phase !== 'inside' && phase !== 'intro') return;
-      
-      const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(scene.children, true);
-
-      if (hits.length > 0) {
-        const obj = hits[0].object;
-        if (keypadMesh && obj === keypadMesh || hits.some(h => h.object === keypadMesh)) {
-          alert("🔐 Enter code: 2000");
-        } else {
-          // Product click
-          productsAdded++;
-          if (productsAdded % 2 === 0 && vipLevel < 10) {
-            vipLevel++;
-            document.getElementById('level').textContent = vipLevel;
-            alert(`🎉 VIP Level Up! Now Level ${vipLevel}`);
-          } else {
-            alert("Added to VIP Wishlist ✨");
-          }
-        }
-      }
-    });
 
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
