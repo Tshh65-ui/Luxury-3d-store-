@@ -5,146 +5,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>LUXE VIP Store</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #000; font-family: 'Arial', sans-serif; }
-    #loading { position: absolute; top: 50%; left: 50%; color: gold; font-size: 28px; transform: translate(-50%, -50%); z-index: 1000; text-shadow: 0 0 20px gold; }
-    
-   .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; align-items: center; justify-content: center; z-index: 300; }
-    
-    #keypadOverlay { display: flex; }
-    .keypad { background: #111; color: white; padding: 40px; border-radius: 20px; text-align: center; box-shadow: 0 0 60px gold; border: 1px solid #444; }
-    
-    #productPanel { display: none; position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); background: #111; color: white; padding: 25px; border-radius: 20px; width: 320px; box-shadow: 0 0 50px rgba(255,215,0,0.4); z-index: 400; }
-    
-    #cartPanel { display: none; position: absolute; top: 20px; right: 20px; background: #111; color: white; padding: 20px; border-radius: 15px; width: 300px; box-shadow: 0 0 40px gold; z-index: 500; max-height: 80vh; overflow-y: auto; }
-    
-    button { padding: 14px 40px; font-size: 18px; background: #c00; color: white; border: none; border-radius: 10px; cursor: pointer; }
-    button:hover { background: #f00; }
+    body { margin: 0; overflow: hidden; background: #000; }
+    #loading { position: absolute; top: 50%; left: 50%; color: gold; font-size: 24px; transform: translate(-50%, -50%); z-index: 1000; }
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.88); display: none; align-items: center; justify-content: center; z-index: 300; }
   </style>
 </head>
 <body>
   <div id="loading">Loading VIP Experience...</div>
 
   <!-- Keypad -->
-  <div id="keypadOverlay" class="overlay">
-    <div class="keypad">
+  <div id="keypadOverlay" class="overlay" style="display: flex;">
+    <div style="background:#111; color:white; padding:40px; border-radius:20px; text-align:center; box-shadow:0 0 50px gold;">
       <h2>🔐 VIP ENTRANCE</h2>
       <p>Enter Access Code</p>
-      <input id="keyInput" type="text" maxlength="4" placeholder="2000" style="font-size:36px; width:220px; text-align:center; padding:15px; background:#222; border:2px solid gold; color:white;">
+      <input id="keyInput" type="text" maxlength="4" placeholder="2000" style="font-size:32px; width:200px; text-align:center; padding:12px;">
       <br><br>
-      <button onclick="submitCode()">UNLOCK DOOR</button>
-      <div id="status" style="color:#ff4444; margin-top:20px; font-weight:bold; min-height:30px;"></div>
+      <button onclick="submitCode()" style="padding:16px 45px; font-size:18px; background:#c00; color:white; border:none; border-radius:10px;">UNLOCK DOOR</button>
+      <div id="status" style="color:#ff4444; margin-top:20px; font-weight:bold; min-height:28px;"></div>
     </div>
   </div>
 
-  <!-- Product Info -->
-  <div id="productPanel">
-    <h3 id="panelName" style="margin:0 0 15px 0; color:gold;"></h3>
-    <p id="panelDesc" style="margin:10px 0; opacity:0.9;"></p>
-    <h2 id="panelPrice" style="color:#0f0; margin:15px 0;"></h2>
-    <button onclick="addCurrentToCart()">ADD TO CART</button>
-    <button onclick="closePanel()" style="background:#444; margin-left:10px;">CLOSE</button>
-  </div>
-
-  <!-- Cart -->
-  <div style="position:absolute; top:20px; right:20px; z-index:600; cursor:pointer;" onclick="toggleCart()">
-    🛍️ <span id="cartCount" style="background:#c00; color:white; border-radius:50%; padding:2px 8px; font-size:14px;">0</span>
-  </div>
-
-  <div id="cartPanel">
-    <h3>Your VIP Cart</h3>
-    <div id="cartItems"></div>
-    <hr style="border-color:#444">
-    <h3>Total: <span id="cartTotal" style="color:gold;">$0</span></h3>
-    <button onclick="checkout()" style="width:100%; background:#0a0;">CHECKOUT</button>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.168.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
     let scene, camera, renderer, controls;
     let products = [];
     let doorMesh;
-    let currentProduct = null;
-    let cart = [];
+    let phase = 'intro';
 
     function init() {
       document.getElementById('loading').style.display = 'none';
 
       scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x111111, 30, 180);
+      scene.fog = new THREE.Fog(0x222222, 25, 160);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 300);
+      camera = new THREE.PerspectiveCamera(52, window.innerWidth / window.innerHeight, 0.1, 200);
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       document.body.appendChild(renderer.domElement);
 
-      // Luxe Lighting
-      scene.add(new THREE.AmbientLight(0xffffff, 1.1));
-      const sun = new THREE.DirectionalLight(0xffddaa, 2.8);
-      sun.position.set(30, 60, 40);
+      // Bright lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 1.3));
+      const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+      sun.position.set(25, 45, 35);
       scene.add(sun);
 
-      // Spotlights
-      const spot = new THREE.SpotLight(0xffaa00, 3, 100, Math.PI/6, 0.6);
-      spot.position.set(0, 25, 10);
-      scene.add(spot);
-
       // Ground + Red Carpet
-      const ground = new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(250,250), new THREE.MeshStandardMaterial({color: 0x2a2a2a}));
       ground.rotation.x = -Math.PI / 2;
       scene.add(ground);
 
-      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(12, 90), new THREE.MeshStandardMaterial({color: 0xbb0000}));
+      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(10, 75), new THREE.MeshStandardMaterial({color: 0xcc0000}));
       carpet.rotation.x = -Math.PI / 2;
-      carpet.position.z = 25;
+      carpet.position.z = 22;
       scene.add(carpet);
 
-      // G-Wagons
+      // Improved G-Wagon (more realistic shape)
       function createG63(x) {
         const group = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.BoxGeometry(7, 3.2, 3.8), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.98, roughness: 0.15}));
-        body.position.y = 2.1;
+        
+        // Main Body
+        const body = new THREE.Mesh(new THREE.BoxGeometry(6.8, 2.9, 3.4), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.97, roughness: 0.2}));
+        body.position.y = 1.9;
         group.add(body);
+        
+        // Roof / Windows
+        const roof = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.6, 2.8), new THREE.MeshStandardMaterial({color: 0x112233, metalness: 0.9}));
+        roof.position.set(0, 3.1, 0);
+        group.add(roof);
+        
+        // Wheels
+        const wheelGeo = new THREE.CylinderGeometry(0.75, 0.75, 0.5, 24);
+        const wheelMat = new THREE.MeshStandardMaterial({color: 0x222222});
+        const positions = [[2.4,1,-1.4], [-2.4,1,-1.4], [2.4,1,1.4], [-2.4,1,1.4]];
+        positions.forEach(pos => {
+          const wheel = new THREE.Mesh(wheelGeo, wheelMat);
+          wheel.rotation.z = Math.PI / 2;
+          wheel.position.set(pos[0] + x, pos[1], pos[2] - 25);
+          scene.add(wheel);
+        });
+
         group.position.x = x;
         scene.add(group);
       }
-      createG63(-18);
-      createG63(18);
+      createG63(-15);
+      createG63(15);
+
+      // Stairs
+      const stairs = new THREE.Mesh(new THREE.BoxGeometry(14, 1.4, 38), new THREE.MeshStandardMaterial({color: 0x555555}));
+      stairs.position.set(0, 8, 18);
+      stairs.rotation.x = -0.18;
+      scene.add(stairs);
 
       // Door
-      doorMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(8, 14, 1.2),
-        new THREE.MeshStandardMaterial({color: 0x222222, metalness: 0.95, roughness: 0.1})
-      );
-      doorMesh.position.set(0, 9.5, 8);
+      doorMesh = new THREE.Mesh(new THREE.BoxGeometry(7.5, 13, 0.8), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.92}));
+      doorMesh.position.set(0, 9, 7);
       scene.add(doorMesh);
 
       // Products
-      function addProduct(x, z, color, name, price, desc) {
-        const p = new THREE.Mesh(
-          new THREE.BoxGeometry(3.2, 3.2, 3.2),
-          new THREE.MeshStandardMaterial({color: color, metalness: 0.92, roughness: 0.2})
-        );
-        p.position.set(x, 6.5, z);
-        p.userData = {name, price, desc};
+      function addProduct(x, z, color, name) {
+        const p = new THREE.Mesh(new THREE.BoxGeometry(3, 3, 3), new THREE.MeshStandardMaterial({color: color, metalness: 0.9}));
+        p.position.set(x, 6, z);
+        p.userData = {name};
         scene.add(p);
         products.push(p);
       }
+      addProduct(-9, 38, 0x00aaff, "Luxe Watch");
+      addProduct(0, 37, 0xff2222, "Signature Sneakers");
+      addProduct(9, 39, 0x22ff88, "Cashmere Coat");
+      addProduct(0, 50, 0xffdd00, "VIP Bag");
 
-      addProduct(-10, 42, 0x00aaff, "Luxe Watch", 12400, "18K Gold • Swiss Movement");
-      addProduct(0, 40, 0xff2222, "Signature Sneakers", 890, "Limited Edition • Italian Leather");
-      addProduct(10, 43, 0x22ff88, "Cashmere Coat", 2850, "100% Mongolian Cashmere");
-      addProduct(0, 55, 0xffdd00, "VIP Alligator Bag", 6500, "Handcrafted • Rare Exotic");
-
-      camera.position.set(0, 22, -65);
+      camera.position.set(0, 20, -60);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.dampingFactor = 0.08;
-      controls.minDistance = 15;
-      controls.maxDistance = 120;
 
       startCinematic();
       animate();
@@ -152,12 +128,12 @@
 
     function startCinematic() {
       let progress = 0;
-      const start = Date.now();
+      const startTime = Date.now();
       function move() {
-        progress = Math.min((Date.now() - start) / 8000, 1);
-        camera.position.z = -65 + progress * 95;
-        camera.position.y = 22 + Math.sin(progress * 3) * 6;
-        camera.lookAt(0, 11, 28);
+        progress = Math.min((Date.now() - startTime) / 9500, 1);
+        camera.position.z = -60 + progress * 75;
+        camera.position.y = 20 + Math.sin(progress * 2.5) * 7;
+        camera.lookAt(0, 10, 22);
         if (progress < 1) requestAnimationFrame(move);
       }
       move();
@@ -169,102 +145,43 @@
 
       if (code === "2000") {
         status.style.color = "#00ff88";
-        status.textContent = "ACCESS GRANTED — WELCOME";
+        status.textContent = "ACCESS GRANTED";
         setTimeout(() => {
           document.getElementById('keypadOverlay').style.display = 'none';
-          
-          // Realistic door swing
-          let angle = 0;
-          const openDoor = setInterval(() => {
-            angle += 4;
-            doorMesh.rotation.y = THREE.MathUtils.degToRad(angle);
-            if (angle >= 110) clearInterval(openDoor);
-          }, 16);
-        }, 800);
+          doorMesh.position.x = -6;
+          setTimeout(() => doorMesh.position.x = 6, 1300);
+          phase = 'inside';
+        }, 900);
       } else {
-        status.textContent = "INCORRECT — CHECK INSTAGRAM";
-        setTimeout(() => status.textContent = "", 2500);
+        status.textContent = "CHECK ON INSTAGRAM";
+        setTimeout(() => status.textContent = "", 2200);
       }
     };
 
     function animate() {
       requestAnimationFrame(animate);
-      controls.update();
-      
-      products.forEach(p => {
-        p.rotation.y += 0.008;
-      });
-      
+      if (controls) controls.update();
+      products.forEach(p => p.rotation.y += 0.009);
       renderer.render(scene, camera);
     }
 
-    // Product Interaction
-    window.addEventListener('click', (e) => {
-      const mouse = new THREE.Vector2(
-        (e.clientX / window.innerWidth) * 2 - 1,
-        -(e.clientY / window.innerHeight) * 2 + 1
-      );
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(products);
-      
-      if (hits.length > 0) {
-        currentProduct = hits[0].object.userData;
-        showProductPanel();
-      }
-    });
-
-    function showProductPanel() {
-      document.getElementById('panelName').textContent = currentProduct.name;
-      document.getElementById('panelDesc').textContent = currentProduct.desc;
-      document.getElementById('panelPrice').textContent = '$' + currentProduct.price.toLocaleString();
-      document.getElementById('productPanel').style.display = 'block';
-    }
-
-    function closePanel() {
-      document.getElementById('productPanel').style.display = 'none';
-    }
-
-    function addCurrentToCart() {
-      cart.push(currentProduct);
-      updateCart();
-      closePanel();
-      alert("Added to your VIP Cart ✨");
-    }
-
-    function updateCart() {
-      document.getElementById('cartCount').textContent = cart.length;
-      
-      let html = '';
-      let total = 0;
-      cart.forEach((item, i) => {
-        total += item.price;
-        html += `<div style="margin:12px 0; padding-bottom:12px; border-bottom:1px solid #333;">
-          ${item.name} — $${item.price}<br>
-          <small style="opacity:0.7">${item.desc}</small>
-        </div>`;
-      });
-      document.getElementById('cartItems').innerHTML = html || "<p>Your cart is empty</p>";
-      document.getElementById('cartTotal').textContent = '$' + total.toLocaleString();
-    }
-
-    function toggleCart() {
-      const panel = document.getElementById('cartPanel');
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-    }
-
-    function checkout() {
-      if (cart.length === 0) return;
-      alert("Thank you for your VIP purchase! 🎉\n\n(This is a demo — real checkout would go here)");
-      cart = [];
-      updateCart();
-      toggleCart();
-    }
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
+    window.addEventListener('click', (e) => {
+      if (phase !== 'inside') return;
+      const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(products);
+      if (hits.length > 0) {
+        alert("Added " + hits[0].object.userData.name + " to your VIP Wishlist ✨");
+      }
+    });
+
     init();
   </script>
 </body>
