@@ -10,7 +10,7 @@
   </style>
 </head>
 <body>
-  <div id="loading">Loading Luxury Store...</div>
+  <div id="loading">Loading Luxury Experience...</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
@@ -18,82 +18,92 @@
 
   <script>
     let scene, camera, renderer, controls, doorMesh, keypadMesh;
+    let phase = 'intro';
 
     function init() {
       document.getElementById('loading').style.display = 'none';
 
       scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x111111, 30, 180);
+      scene.fog = new THREE.Fog(0x0a0a0a, 40, 200);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 250);
+      camera = new THREE.PerspectiveCamera(48, window.innerWidth / window.innerHeight, 0.1, 300);
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       document.body.appendChild(renderer.domElement);
 
-      scene.add(new THREE.AmbientLight(0xffffff, 1.4));
-      const sun = new THREE.DirectionalLight(0xffffff, 2.4);
-      sun.position.set(30, 50, 40);
+      // Luxurious lighting
+      scene.add(new THREE.AmbientLight(0xffffff, 1.3));
+      const sun = new THREE.DirectionalLight(0xffeedd, 2.2);
+      sun.position.set(40, 60, 50);
       scene.add(sun);
 
       // Solid Ground
-      const ground = new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshStandardMaterial({color: 0x222222}));
+      const ground = new THREE.Mesh(new THREE.PlaneGeometry(400,400), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
       ground.rotation.x = -Math.PI / 2;
       scene.add(ground);
 
       // Red Carpet
-      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(9, 52), new THREE.MeshStandardMaterial({color: 0xcc0000}));
+      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(10, 60), new THREE.MeshStandardMaterial({color: 0xcc0000}));
       carpet.rotation.x = -Math.PI / 2;
-      carpet.position.set(0, 0.05, 26);
+      carpet.position.set(0, 0.05, 28);
       scene.add(carpet);
 
-      // Real G-Wagons facing each other
+      // G-Wagons facing each other
       const loader = new THREE.GLTFLoader();
-      
       loader.load('g63.glb', (gltf) => {
-        // Left Car facing RIGHT (towards center)
         const car1 = gltf.scene.clone();
-        car1.position.set(-16, 0, -32);
-        car1.scale.set(2.2, 2.2, 2.2);
-        car1.rotation.y = Math.PI / 2;     // Facing right
+        car1.position.set(-18, 0, -35);
+        car1.scale.set(2.3, 2.3, 2.3);
+        car1.rotation.y = Math.PI / 2;
         scene.add(car1);
 
-        // Right Car facing LEFT (towards center)
         const car2 = gltf.scene.clone();
-        car2.position.set(16, 0, -32);
-        car2.scale.set(2.2, 2.2, 2.2);
-        car2.rotation.y = -Math.PI / 2;    // Facing left
+        car2.position.set(18, 0, -35);
+        car2.scale.set(2.3, 2.3, 2.3);
+        car2.rotation.y = -Math.PI / 2;
         scene.add(car2);
       });
 
-      // Load Keypad Model
+      // Stairs
+      const stairs = new THREE.Mesh(new THREE.BoxGeometry(18, 1.6, 48), new THREE.MeshStandardMaterial({color: 0x555555}));
+      stairs.position.set(0, 9, 22);
+      stairs.rotation.x = -0.22;
+      scene.add(stairs);
+
+      // Spacious Store with White Walls
+      const wallMat = new THREE.MeshStandardMaterial({color: 0xf8f8f8, metalness: 0.1});
+      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(3, 28, 80), wallMat);
+      leftWall.position.set(-22, 16, 55);
+      scene.add(leftWall);
+      const rightWall = leftWall.clone();
+      rightWall.position.x = 22;
+      scene.add(rightWall);
+
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(50, 28, 3), wallMat);
+      backWall.position.set(0, 16, 95);
+      scene.add(backWall);
+
+      // Door
+      doorMesh = new THREE.Mesh(new THREE.BoxGeometry(9, 16, 1), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.95}));
+      doorMesh.position.set(0, 10, 14);
+      scene.add(doorMesh);
+
+      // Keypad Model
       loader.load('keypad.glb', (gltf) => {
         keypadMesh = gltf.scene.clone();
-        keypadMesh.position.set(9.5, 7, 12);
-        keypadMesh.scale.set(1.8, 1.8, 1.8);
+        keypadMesh.position.set(10, 8, 14);
+        keypadMesh.scale.set(2, 2, 2);
         keypadMesh.rotation.y = Math.PI;
         scene.add(keypadMesh);
       });
 
-      // Stairs
-      const stairs = new THREE.Mesh(new THREE.BoxGeometry(16, 1.5, 45), new THREE.MeshStandardMaterial({color: 0x444444}));
-      stairs.position.set(0, 8, 20);
-      stairs.rotation.x = -0.22;
-      scene.add(stairs);
-
-      // Door
-      doorMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 14, 1), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.95}));
-      doorMesh.position.set(0, 10, 12);
-      scene.add(doorMesh);
-
-      camera.position.set(0, 8, -45);
+      camera.position.set(0, 12, -55);
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
-      controls.minDistance = 5;
-      controls.maxDistance = 120;
-      controls.minPolarAngle = Math.PI * 0.1;
-      controls.maxPolarAngle = Math.PI * 0.85;
+      controls.minDistance = 6;
+      controls.maxDistance = 150;
 
       startCinematic();
       animate();
@@ -102,20 +112,54 @@
     function startCinematic() {
       let progress = 0;
       const startTime = Date.now();
+      
       function move() {
-        progress = Math.min((Date.now() - startTime) / 14000, 1);
-        if (progress < 0.4) {
-          camera.position.z = -45 + progress * 40;
-        } else if (progress < 0.7) {
-          camera.position.set(0, 12, -20 + (progress-0.4)*55);
+        progress = Math.min((Date.now() - startTime) / 16000, 1);
+
+        if (progress < 0.35) {
+          // Start with both cars visible
+          camera.position.set(0, 12, -55 + progress * 35);
+        } else if (progress < 0.65) {
+          // Pass between cars and up stairs
+          camera.position.set(0, 14 + (progress-0.35)*12, -25 + (progress-0.35)*55);
         } else {
-          camera.position.set(5, 14, 18);
-          camera.lookAt(0, 11, 20);
+          // Approach door + keypad
+          camera.position.set(6, 13, 18);
+          camera.lookAt(0, 10, 16);
         }
+
         if (progress < 1) requestAnimationFrame(move);
+        else document.getElementById('keypadOverlay').style.display = 'flex';
       }
       move();
     }
+
+    // Keypad Overlay
+    const keypadHTML = `
+      <div style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;z-index:300;">
+        <div style="background:#111;color:white;padding:40px;border-radius:20px;text-align:center;max-width:90%;">
+          <h2>🔐 VIP ENTRANCE</h2>
+          <p>Enter Access Code</p>
+          <input id="keyInput" type="text" maxlength="4" style="font-size:36px;width:220px;text-align:center;padding:15px;background:#222;border:3px solid gold;color:white;">
+          <br><br>
+          <button onclick="submitCode()" style="padding:18px 60px;font-size:18px;background:#c00;color:white;border:none;border-radius:12px;">UNLOCK DOOR</button>
+          <div id="status" style="color:#ff4444;margin-top:20px;font-weight:bold;"></div>
+        </div>
+      </div>`;
+    document.body.insertAdjacentHTML('beforeend', keypadHTML);
+
+    window.submitCode = function() {
+      const code = document.getElementById('keyInput').value.trim();
+      if (code === "2000") {
+        document.querySelector('div[style*="z-index:300"]').style.display = 'none';
+        doorMesh.position.x = -6;
+        setTimeout(() => doorMesh.position.x = 6, 1400);
+        phase = 'inside';
+      } else {
+        document.getElementById('status').textContent = "CHECK ON INSTAGRAM";
+        setTimeout(() => document.getElementById('status').textContent = "", 2000);
+      }
+    };
 
     function animate() {
       requestAnimationFrame(animate);
