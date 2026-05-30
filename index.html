@@ -2,193 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>LUXE VIP Store</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureLock Pro • Wall Keypad Lock</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #000; font-family: Arial, sans-serif; }
-    #loading { position: absolute; top: 50%; left: 50%; color: gold; font-size: 24px; transform: translate(-50%, -50%); z-index: 1000; }
-    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 300; }
-    #levelDisplay { position: absolute; top: 15px; right: 15px; background: rgba(0,0,0,0.8); color: gold; padding: 10px 18px; border-radius: 10px; font-size: 16px; border: 1px solid gold; z-index: 200; }
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #0f0f0f; color: #ddd; }
+    header {
+      background: #1a1a1a;
+      padding: 15px 30px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid #333;
+    }
+    .logo { font-size: 24px; font-weight: bold; color: #00ccff; }
+    .nav { display: flex; gap: 25px; align-items: center; }
+    .nav a { color: #ddd; text-decoration: none; font-weight: 500; }
+    .icons { display: flex; gap: 20px; align-items: center; font-size: 22px; }
+    .main {
+      display: flex;
+      height: calc(100vh - 70px);
+    }
+    .viewer {
+      flex: 1;
+      background: #111;
+      position: relative;
+    }
+    .info {
+      width: 380px;
+      background: #1a1a1a;
+      padding: 30px;
+      overflow-y: auto;
+    }
+    h1 { margin: 0 0 10px 0; font-size: 28px; }
+    .price { font-size: 32px; color: #00cc88; font-weight: bold; margin: 10px 0; }
+    button {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      background: #00cc88;
+      color: black;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 15px 0;
+    }
+    .description { line-height: 1.6; color: #bbb; }
   </style>
 </head>
 <body>
-  <div id="loading">Loading VIP Experience...</div>
-  <div id="levelDisplay">VIP LEVEL <span id="level">1</span></div>
 
-  <!-- Keypad -->
-  <div id="keypadOverlay" class="overlay">
-    <div style="background:#0a0a0a; color:white; padding:40px; border-radius:20px; text-align:center; box-shadow:0 0 60px gold; border:2px solid #444;">
-      <h2>🔐 SECURE ACCESS</h2>
-      <p style="margin:10px 0 20px;">ENTER VIP CODE</p>
-      <input id="keyInput" type="text" maxlength="4" style="font-size:36px; width:220px; text-align:center; padding:15px; background:#111; border:2px solid #666; color:white; letter-spacing:10px;">
-      <br><br>
-      <button onclick="submitCode()" style="padding:16px 50px; font-size:18px; background:#c00; color:white; border:none; border-radius:10px;">UNLOCK</button>
-      <div id="status" style="color:#ff4444; margin-top:20px; font-weight:bold; min-height:30px;"></div>
+  <!-- Store Header -->
+  <header>
+    <div class="logo">SecureLock</div>
+    <div class="nav">
+      <a href="#">Shop</a>
+      <a href="#">Collections</a>
+      <a href="#">About</a>
+      <a href="#">Support</a>
+    </div>
+    <div class="icons">
+      <span>👤</span> <!-- Profile -->
+      <span>❤️</span> <!-- Wishlist -->
+      <span>🛒</span> <!-- Basket -->
+    </div>
+  </header>
+
+  <div class="main">
+    <!-- 3D Viewer -->
+    <div class="viewer">
+      <iframe 
+        src="https://sketchfab.com/3d-models/wall-keypad-lock-4d50f41d812e4d3cb0b87baaf7d43993/embed?autostart=1&ui_hint=2&ui_watermark=0&ui_controls=1&ui_infos=0" 
+        style="width:100%; height:100%; border:none;"
+        allowfullscreen 
+        allow="autoplay; fullscreen; xr-spatial-tracking">
+      </iframe>
+    </div>
+
+    <!-- Product Info -->
+    <div class="info">
+      <h1>Wall Keypad Lock Pro</h1>
+      <div class="price">$189.00</div>
+      
+      <p><strong>Premium wall-mounted security keypad</strong></p>
+      <p class="description">
+        Heavy-duty keypad lock with LED indicators, digital screen, and fingerprint scanner. 
+        Perfect for secure doors, server rooms, and high-security entrances. 
+        Low-poly, clean design ready for real-world use.
+      </p>
+
+      <button onclick="addToCart()">Add to Basket</button>
+      <button style="background:#333; color:white;">Buy Now</button>
+
+      <hr style="border-color:#333; margin:25px 0;">
+      
+      <h3>Features</h3>
+      <ul>
+        <li>LED status indicators</li>
+        <li>Built-in fingerprint scanner</li>
+        <li>Digital PIN screen</li>
+        <li>Wall-mounted design</li>
+        <li>Durable metal finish</li>
+      </ul>
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
-
   <script>
-    let scene, camera, renderer, controls, doorMesh;
-    let phase = 'intro';
-    let vipLevel = 1;
-    let productsAdded = 0;
-
-    function updateLevel() {
-      document.getElementById('level').textContent = vipLevel;
+    function addToCart() {
+      alert("✅ Wall Keypad Lock added to your basket!");
     }
-
-    function init() {
-      document.getElementById('loading').style.display = 'none';
-      updateLevel();
-
-      scene = new THREE.Scene();
-      scene.fog = new THREE.Fog(0x111111, 30, 180);
-
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 250);
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      document.body.appendChild(renderer.domElement);
-
-      scene.add(new THREE.AmbientLight(0xffffff, 1.3));
-      const sun = new THREE.DirectionalLight(0xffffff, 2.4);
-      sun.position.set(30, 50, 40);
-      scene.add(sun);
-
-      // Ground
-      const ground = new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshStandardMaterial({color: 0x222222}));
-      ground.rotation.x = -Math.PI / 2;
-      scene.add(ground);
-
-      // Red Carpet on Stairs
-      const carpet = new THREE.Mesh(new THREE.PlaneGeometry(9, 52), new THREE.MeshStandardMaterial({color: 0xcc0000}));
-      carpet.rotation.x = -Math.PI / 2;
-      carpet.position.set(0, 0.1, 26);
-      scene.add(carpet);
-
-      // G-Wagons
-      function createG63(x) {
-        const group = new THREE.Group();
-        const body = new THREE.Mesh(new THREE.BoxGeometry(7, 2.8, 3.5), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.95}));
-        body.position.y = 2;
-        group.add(body);
-        const roof = new THREE.Mesh(new THREE.BoxGeometry(5.2, 1.6, 2.8), new THREE.MeshStandardMaterial({color: 0x1a1a1a}));
-        roof.position.y = 3.4;
-        group.add(roof);
-        group.position.set(x, 0, -32);
-        scene.add(group);
-      }
-      createG63(-16);
-      createG63(16);
-
-      // Big Stairs
-      const stairs = new THREE.Mesh(new THREE.BoxGeometry(16, 1.5, 45), new THREE.MeshStandardMaterial({color: 0x444444}));
-      stairs.position.set(0, 8, 20);
-      stairs.rotation.x = -0.22;
-      scene.add(stairs);
-
-      // Massive Store
-      const wallMat = new THREE.MeshStandardMaterial({color: 0x1a1a1a, metalness: 0.7});
-      const leftWall = new THREE.Mesh(new THREE.BoxGeometry(3, 25, 70), wallMat);
-      leftWall.position.set(-18, 15, 45);
-      scene.add(leftWall);
-      const rightWall = leftWall.clone();
-      rightWall.position.x = 18;
-      scene.add(rightWall);
-
-      // Door
-      doorMesh = new THREE.Mesh(new THREE.BoxGeometry(8, 14, 1), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.95}));
-      doorMesh.position.set(0, 10, 12);
-      scene.add(doorMesh);
-
-      camera.position.set(0, 6, -45);
-
-      controls = new THREE.OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-
-      startCinematic();
-      animate();
-    }
-
-    function startCinematic() {
-      let progress = 0;
-      const startTime = Date.now();
-      
-      function moveCamera() {
-        progress = Math.min((Date.now() - startTime) / 14000, 1);
-
-        if (progress < 0.35) {
-          camera.position.set(0, 8, -45 + progress*35);
-        } else if (progress < 0.65) {
-          camera.position.set(0, 12 + (progress-0.35)*28, -15 + (progress-0.35)*50);
-        } else {
-          camera.position.set(3, 16, 8 + (progress-0.65)*25);
-          camera.lookAt(0, 11, 18);
-        }
-
-        if (progress < 1) {
-          requestAnimationFrame(moveCamera);
-        } else {
-          document.getElementById('keypadOverlay').style.display = 'flex';
-        }
-      }
-      moveCamera();
-    }
-
-    window.submitCode = function() {
-      const code = document.getElementById('keyInput').value.trim();
-      const status = document.getElementById('status');
-
-      if (code === "2000") {
-        status.style.color = "#00ff88";
-        status.textContent = "ACCESS GRANTED";
-        setTimeout(() => {
-          document.getElementById('keypadOverlay').style.display = 'none';
-          doorMesh.position.x = -6;
-          setTimeout(() => doorMesh.position.x = 6, 1200);
-        }, 800);
-      } else {
-        status.textContent = "CHECK ON INSTAGRAM";
-        setTimeout(() => status.textContent = "", 2200);
-      }
-    };
-
-    function animate() {
-      requestAnimationFrame(animate);
-      if (controls) controls.update();
-      renderer.render(scene, camera);
-    }
-
-    // Click to add product + level up
-    window.addEventListener('click', (e) => {
-      if (phase !== 'inside') return;
-      const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(scene.children, true);
-      
-      if (hits.length > 0) {
-        productsAdded++;
-        if (productsAdded % 2 === 0 && vipLevel < 10) { // Level up every 2 items
-          vipLevel++;
-          updateLevel();
-          alert(`🎉 VIP Level Up! You are now Level ${vipLevel}`);
-        } else {
-          alert("Added to your VIP Wishlist ✨");
-        }
-      }
-    });
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    init();
   </script>
 </body>
 </html>
