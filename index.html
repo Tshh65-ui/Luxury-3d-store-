@@ -3,116 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SecureLock Pro • Wall Keypad Lock</title>
+  <title>SCP Keycards Pack - Interactive 3D</title>
   <style>
-    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #0f0f0f; color: #ddd; }
-    header {
-      background: #1a1a1a;
-      padding: 15px 30px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      border-bottom: 1px solid #333;
+    body { 
+      margin: 0; 
+      background: #0a0a0a; 
+      overflow: hidden;
+      font-family: Arial, sans-serif;
     }
-    .logo { font-size: 24px; font-weight: bold; color: #00ccff; }
-    .nav { display: flex; gap: 25px; align-items: center; }
-    .nav a { color: #ddd; text-decoration: none; font-weight: 500; }
-    .icons { display: flex; gap: 20px; align-items: center; font-size: 22px; }
-    .main {
-      display: flex;
-      height: calc(100vh - 70px);
-    }
-    .viewer {
-      flex: 1;
-      background: #111;
-      position: relative;
-    }
-    .info {
-      width: 380px;
-      background: #1a1a1a;
-      padding: 30px;
-      overflow-y: auto;
-    }
-    h1 { margin: 0 0 10px 0; font-size: 28px; }
-    .price { font-size: 32px; color: #00cc88; font-weight: bold; margin: 10px 0; }
-    button {
-      width: 100%;
-      padding: 16px;
-      font-size: 18px;
-      background: #00cc88;
-      color: black;
+    iframe { 
+      width: 100vw; 
+      height: 100vh; 
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      margin: 15px 0;
     }
-    .description { line-height: 1.6; color: #bbb; }
+    .header {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      color: #fff;
+      background: rgba(0,0,0,0.7);
+      padding: 10px 18px;
+      border-radius: 6px;
+      z-index: 10;
+      font-size: 15px;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
-
-  <!-- Store Header -->
-  <header>
-    <div class="logo">SecureLock</div>
-    <div class="nav">
-      <a href="#">Shop</a>
-      <a href="#">Collections</a>
-      <a href="#">About</a>
-      <a href="#">Support</a>
-    </div>
-    <div class="icons">
-      <span>👤</span> <!-- Profile -->
-      <span>❤️</span> <!-- Wishlist -->
-      <span>🛒</span> <!-- Basket -->
-    </div>
-  </header>
-
-  <div class="main">
-    <!-- 3D Viewer -->
-    <div class="viewer">
-      <iframe 
-        src="https://sketchfab.com/3d-models/wall-keypad-lock-4d50f41d812e4d3cb0b87baaf7d43993/embed?autostart=1&ui_hint=2&ui_watermark=0&ui_controls=1&ui_infos=0" 
-        style="width:100%; height:100%; border:none;"
-        allowfullscreen 
-        allow="autoplay; fullscreen; xr-spatial-tracking">
-      </iframe>
-    </div>
-
-    <!-- Product Info -->
-    <div class="info">
-      <h1>Wall Keypad Lock Pro</h1>
-      <div class="price">$189.00</div>
-      
-      <p><strong>Premium wall-mounted security keypad</strong></p>
-      <p class="description">
-        Heavy-duty keypad lock with LED indicators, digital screen, and fingerprint scanner. 
-        Perfect for secure doors, server rooms, and high-security entrances. 
-        Low-poly, clean design ready for real-world use.
-      </p>
-
-      <button onclick="addToCart()">Add to Basket</button>
-      <button style="background:#333; color:white;">Buy Now</button>
-
-      <hr style="border-color:#333; margin:25px 0;">
-      
-      <h3>Features</h3>
-      <ul>
-        <li>LED status indicators</li>
-        <li>Built-in fingerprint scanner</li>
-        <li>Digital PIN screen</li>
-        <li>Wall-mounted design</li>
-        <li>Durable metal finish</li>
-      </ul>
-    </div>
+  <div class="header">
+    SCP Keycards Pack • alexandre962
   </div>
-
-  <script>
-    function addToCart() {
-      alert("✅ Wall Keypad Lock added to your basket!");
-    }
-  </script>
+  
+  <iframe 
+    src="https://sketchfab.com/3d-models/scp-keycards-pack-73f3780b4fbf4126a4415a5ef5f819e9/embed?autostart=1&ui_hint=2&ui_watermark=0&ui_controls=1" 
+    allowfullscreen 
+    allow="autoplay; fullscreen; xr-spatial-tracking; accelerometer; gyroscope; magnetometer">
+  </iframe>
 </body>
 </html>
