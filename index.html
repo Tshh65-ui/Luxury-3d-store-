@@ -12,7 +12,7 @@
   </style>
 </head>
 <body>
-  <div id="loading">Loading Real G-Wagon & Store...</div>
+  <div id="loading">Loading Luxury Store...</div>
   <div id="levelDisplay">VIP LEVEL <span id="level">1</span></div>
 
   <!-- Keypad -->
@@ -59,14 +59,16 @@
       sun.position.set(30, 50, 40);
       scene.add(sun);
 
-      // Ground + Red Carpet
+      // Solid Ground (prevents falling under)
       const ground = new THREE.Mesh(new THREE.PlaneGeometry(300,300), new THREE.MeshStandardMaterial({color: 0x222222}));
       ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -0.1;
       scene.add(ground);
 
+      // Red Carpet
       const carpet = new THREE.Mesh(new THREE.PlaneGeometry(9, 52), new THREE.MeshStandardMaterial({color: 0xcc0000}));
       carpet.rotation.x = -Math.PI / 2;
-      carpet.position.set(0, 0.1, 26);
+      carpet.position.set(0, 0.05, 26);
       scene.add(carpet);
 
       // Real G-Wagons
@@ -91,7 +93,7 @@
       stairs.rotation.x = -0.22;
       scene.add(stairs);
 
-      // Massive Store Walls
+      // Store Walls
       const wallMat = new THREE.MeshStandardMaterial({color: 0x1a1a1a});
       const leftWall = new THREE.Mesh(new THREE.BoxGeometry(3, 25, 70), wallMat);
       leftWall.position.set(-18, 15, 45);
@@ -109,6 +111,10 @@
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
+      controls.minDistance = 5;
+      controls.maxDistance = 120;
+      controls.minPolarAngle = Math.PI * 0.1;   // Prevent looking too far down
+      controls.maxPolarAngle = Math.PI * 0.85;  // Prevent going under ground
 
       startCinematic();
       animate();
@@ -157,19 +163,17 @@
       renderer.render(scene, camera);
     }
 
-    // Click products to add & level up
     window.addEventListener('click', (e) => {
       if (phase !== 'inside') return;
       const mouse = new THREE.Vector2((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(scene.children, true);
-      if (hits.length > 0) {
+      if (raycaster.intersectObjects(scene.children, true).length > 0) {
         productsAdded++;
         if (productsAdded % 2 === 0 && vipLevel < 10) {
           vipLevel++;
-          updateLevel();
-          alert(`🎉 Congratulations! You are now VIP Level ${vipLevel}`);
+          document.getElementById('level').textContent = vipLevel;
+          alert(`🎉 VIP Level Up! You are now Level ${vipLevel}`);
         } else {
           alert("Added to your VIP Wishlist ✨");
         }
